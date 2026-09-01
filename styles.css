@@ -131,8 +131,9 @@ button,input,textarea{font:inherit;color:inherit}
 }
 .tag{
   display:block;margin:0 0 10px;font-size:11px;letter-spacing:.18em;
-  color:var(--ink-3);font-variant-numeric:tabular-nums;
+  color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:pre;
 }
+.tag.over{color:#B4562F}
 
 .hint{padding:40px 0;color:var(--ink-3)}
 .hint p{margin:0;font-size:14px}
