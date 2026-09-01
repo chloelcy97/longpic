@@ -10,9 +10,12 @@
 'use strict';
 
 const W = 1080;                 // 出图宽度
-const PAD_X = 92;               // 左右留白
-const PAD_TOP = 116;
-const PAD_BOTTOM = 92;
+// 疏密：一整套留白，行距、段距、边距一起动
+const AIR = {
+  tight: { lh:1.72, para:0.55, padX:84,  padTop:120, padBottom:100 },
+  mid  : { lh:1.85, para:0.75, padX:96,  padTop:150, padBottom:126 },
+  loose: { lh:2.00, para:1.00, padX:110, padTop:186, padBottom:156 },
+};
 const MIN_H = 2240;             // 宽高比 2.07，刚过微博那道线
 const SAFE_BYTES = 500 * 1024;  // 超过这个会被重新压
 
@@ -33,7 +36,7 @@ const NO_TAIL = new Set('（【《「『〈([{“‘');
 
 const state = {
   title:'', body:'', sign:'',
-  font:'hei', size:'m', style:'redbar', height:4000, indent:1,
+  font:'hei', size:'m', style:'redbar', height:4000, indent:1, air:'mid',
 };
 
 const $ = s => document.querySelector(s);
@@ -93,12 +96,16 @@ function metrics(){
   const font = FONTS[state.font];
   const st   = state.style;
 
+  const air = AIR[state.air] || AIR.mid;
   const m = {
     st, size, font,
-    maxW  : W - PAD_X * 2,
-    lh    : Math.round(size * 1.95),
+    padX  : air.padX,
+    padTop: air.padTop,
+    padBottom: air.padBottom,
+    maxW  : W - air.padX * 2,
+    lh    : Math.round(size * air.lh),
     fSize : Math.round(size * 0.56),
-    gap   : state.indent ? Math.round(size * 0.34) : Math.round(size * 0.95),
+    gap   : Math.round(size * (state.indent ? air.para * 0.55 : air.para)),
     indentW: state.indent ? size * 2 : 0,
   };
   m.footH = m.fSize + 40;
@@ -143,8 +150,8 @@ function buildBlocks(m){
 
 function paginate(blocks, m, bottom){
   const pages = [];
-  let page = [], y = PAD_TOP;
-  const flush = () => { if (page.length) pages.push(page); page = []; y = PAD_TOP; };
+  let page = [], y = m.padTop;
+  const flush = () => { if (page.length) pages.push(page); page = []; y = m.padTop; };
 
   for (const b of blocks){
     if (b.kind === 'title'){ page.push({ ...b, y }); y += b.h; continue; }
@@ -163,7 +170,7 @@ function paginate(blocks, m, bottom){
 }
 
 function contentBottom(items, m){
-  let end = PAD_TOP;
+  let end = m.padTop;
   for (const it of items){
     end = Math.max(end, it.kind === 'title' ? it.y + it.h - Math.round(m.size * 0.8) : it.y + m.lh);
   }
@@ -175,13 +182,13 @@ function layout(){
   const blocks = buildBlocks(m);
   if (!blocks.length) return { pages:[], m };
 
-  const chrome = m.footH + PAD_BOTTOM;
+  const chrome = m.footH + m.padBottom;
   const roomMax = Math.max(MIN_H, state.height) - chrome;
   const n = paginate(blocks, m, roomMax).length;
 
   // 页数不变的前提下，每页少装一点 —— 这样几张的疏密才匀，
   // 不会第一张塞满、最后一张只剩两行。
-  let lo = PAD_TOP + m.lh, hi = roomMax;
+  let lo = m.padTop + m.lh, hi = roomMax;
   while (lo < hi){
     const mid = lo + Math.floor((hi - lo) / 2);
     if (paginate(blocks, m, mid).length <= n) hi = mid; else lo = mid + 1;
@@ -198,6 +205,14 @@ function layout(){
   const markY = contentBottom(tail.items, m) + Math.round(m.size * 1.3);
   if (markY + Math.round(m.size * 0.6) + chrome <= H) tail.items.push({ kind:'mark', y:markY });
 
+  // 页高有富余时给上面分一点，但封顶 —— 分多了标题就飘着了
+  for (const pg of pages){
+    const room = H - chrome - contentBottom(pg.items, m);
+    if (room > 80){
+      const shift = Math.min(Math.round(room * 0.3), Math.round(m.size * 2.4));
+      for (const it of pg.items) it.y += shift;
+    }
+  }
   return { pages, m };
 }
 
@@ -208,10 +223,10 @@ function drawLine(ctx, line, y, m){
   // 中间的行两端对齐，末行保持自然长度
   if (!line.last && line.toks.length > 1 && gapW > 0.5 && gapW < line.avail * 0.2){
     const extra = gapW / (line.toks.length - 1);
-    let cx = PAD_X + line.indent;
+    let cx = m.padX + line.indent;
     for (const t of line.toks){ ctx.fillText(t, cx, y); cx += ctx.measureText(t).width + extra; }
   } else {
-    ctx.fillText(line.toks.join(''), PAD_X + line.indent, y);
+    ctx.fillText(line.toks.join(''), m.padX + line.indent, y);
   }
 }
 
@@ -219,7 +234,7 @@ function drawTitle(ctx, it, m){
   const sign = state.sign.trim();
 
   if (it.style === 'vertical'){
-    const cx = PAD_X + m.maxW - Math.round(m.tSize * 0.5);
+    const cx = m.padX + m.maxW - Math.round(m.tSize * 0.5);
     ctx.fillStyle = C.ink;
     ctx.font = `600 ${m.tSize}px ${m.font}`;
     ctx.textAlign = 'center';
@@ -232,21 +247,21 @@ function drawTitle(ctx, it, m){
 
   if (it.style === 'redbar'){
     ctx.fillStyle = C.red;
-    ctx.fillRect(PAD_X, it.y + 2, Math.round(m.size * 1.9), 4);
+    ctx.fillRect(m.padX, it.y + 2, Math.round(m.size * 1.9), 4);
   }
   if (it.style === 'masthead'){
     if (sign){
       ctx.fillStyle = C.sub;
       ctx.font = `${m.fSize}px ${FONTS.hei}`;
       const w = ctx.measureText(sign).width;
-      ctx.fillText(sign, PAD_X + m.maxW - w, top - 16);
+      ctx.fillText(sign, m.padX + m.maxW - w, top - 16);
     }
     ctx.fillStyle = C.ink;
-    ctx.fillRect(PAD_X, top - 2, m.maxW, 2);
+    ctx.fillRect(m.padX, top - 2, m.maxW, 2);
   }
   ctx.fillStyle = C.ink;
   ctx.font = `600 ${m.tSize}px ${m.font}`;
-  it.lines.forEach((ln, i) => ctx.fillText(ln.toks.join(''), PAD_X, top + m.tLh * (i + 0.8)));
+  it.lines.forEach((ln, i) => ctx.fillText(ln.toks.join(''), m.padX, top + m.tLh * (i + 0.8)));
 }
 
 function render(){
@@ -283,12 +298,12 @@ function render(){
     // 页脚：落款在左，页码在右。刊头版的落款已经在题头上了
     ctx.font = `${m.fSize}px ${FONTS.hei}`;
     ctx.fillStyle = C.sub;
-    const fy = pg.h - PAD_BOTTOM + m.fSize * 0.4;
+    const fy = pg.h - m.padBottom + m.fSize * 0.4;
     const sign = state.sign.trim();
-    if (sign && m.st !== 'masthead') ctx.fillText(sign, PAD_X, fy);
+    if (sign && m.st !== 'masthead') ctx.fillText(sign, m.padX, fy);
     if (total > 1){
       const label = `${idx + 1} / ${total}`;
-      ctx.fillText(label, W - PAD_X - ctx.measureText(label).width, fy);
+      ctx.fillText(label, W - m.padX - ctx.measureText(label).width, fy);
     }
     out.push(cv);
   });
@@ -378,7 +393,7 @@ let timer;
 const schedule = () => { clearTimeout(timer); timer = setTimeout(() => { render(); store(); }, 160); };
 
 const KEYS = [['#style','style',String],['#font','font',String],['#size','size',String],
-              ['#height','height',Number],['#indent','indent',Number]];
+              ['#air','air',String],['#height','height',Number],['#indent','indent',Number]];
 
 function store(){
   try { localStorage.setItem('longpic', JSON.stringify(state)); } catch {}
