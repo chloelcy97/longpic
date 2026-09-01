@@ -16,11 +16,8 @@ const FONTS = {
   hei : '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Heiti SC",sans-serif',
 };
 
-const THEMES = {
-  paper: { bg:'#FBFAF7', ink:'#1B1A17', sub:'#A9A399', rule:'#A8452C' },
-  rice : { bg:'#F2EADB', ink:'#241F17', sub:'#A2977F', rule:'#9C5228' },
-  night: { bg:'#16171C', ink:'#E9E6E0', sub:'#6E727C', rule:'#C2603E' },
-};
+// 白底。正文墨色偏暖，其余都是它的淡度
+const C = { bg:'#FFFFFF', ink:'#141310', sub:'#A6A099', hair:'#D9D4CB', faint:'#E2DCD1' };
 
 // 不能出现在行首 / 行尾的标点
 const NO_HEAD = new Set('，。、；：？！）】》」』〉％,.;:?!)]}…—·”’');
@@ -28,7 +25,7 @@ const NO_TAIL = new Set('（【《「『〈([{“‘');
 
 const state = {
   title:'', body:'', sign:'',
-  font:'song', size:'m', theme:'paper', height:1440, indent:1,
+  font:'song', size:'m', style:'rule', height:1440, indent:1,
 };
 
 const $ = s => document.querySelector(s);
@@ -101,11 +98,17 @@ function layout(){
   const paras = state.body.split(/\n+/).map(s => s.trim()).filter(Boolean);
   const blocks = [];
 
-  // 标题：一道短红线 + 标题行
+  // 标题：四种版式，高度各算各的
+  const st = state.style;
   if (state.title.trim()){
     measurer.font = `600 ${tSize}px ${font}`;
     const tl = wrap(state.title.trim(), maxW, 0);
-    blocks.push({ kind:'title', lines:tl, h: 3 + 24 + tl.length * tLh + Math.round(size * 1.1), tLh, tSize });
+    const above = st === 'quote'  ? Math.round(tSize * 1.02) : 0;
+    const under = st === 'rule'   ? Math.round(size * 0.70) + 2
+                : st === 'center' ? Math.round(size * 0.62) + 1 : 0;
+    const below = Math.round(size * 1.3);
+    blocks.push({ kind:'title', style:st, lines:tl, tLh, tSize, above, under,
+                  h: above + tl.length * tLh + under + below });
   }
 
   measurer.font = bodyFont;
@@ -139,14 +142,20 @@ function layout(){
   }
   newPage();
 
-  // 最后一张按内容收一收，免得留一大片空白
+  // 收尾：末页画个小菱形，再按内容把高度收一收
   const tail = pages[pages.length - 1];
   if (tail){
     let maxY = PAD_TOP;
     for (const it of tail.items){
-      maxY = Math.max(maxY, it.kind === 'title' ? it.y + it.h - Math.round(size * 0.6) : it.y + lh);
+      maxY = Math.max(maxY, it.kind === 'title' ? it.y + it.h - Math.round(size * 0.7) : it.y + lh);
     }
-    tail.h = Math.min(H, Math.max(Math.round(H * 0.55), Math.round(maxY + footH + PAD_BOTTOM)));
+    let end = maxY;
+    const markY = maxY + Math.round(size * 1.15);
+    if (markY + Math.round(size * 0.6) + footH + PAD_BOTTOM <= H){
+      tail.items.push({ kind:'mark', y:markY });
+      end = markY + Math.round(size * 0.5);
+    }
+    tail.h = Math.min(H, Math.max(Math.round(H * 0.45), Math.round(end + footH + PAD_BOTTOM)));
   }
 
   return { pages, size, font, lh, fSize, H };
@@ -166,9 +175,47 @@ function drawLine(ctx, line, x, y, maxW){
   }
 }
 
+function drawTitle(ctx, it, L){
+  const maxW = W - PAD_X * 2;
+  const top = it.y + it.above;
+
+  if (it.style === 'quote'){
+    // 引号的墨只占字身上半截，得按实际墨迹定位，不然会飘得很远
+    ctx.fillStyle = C.faint;
+    ctx.font = `${Math.round(it.tSize * 2.2)}px ${FONTS.song}`;
+    const g = '\u201C';
+    const m = ctx.measureText(g);
+    let base = top - Math.round(it.tSize * 0.26) - m.actualBoundingBoxDescent;
+    const over = it.y - (base - m.actualBoundingBoxAscent);
+    if (over > 0) base += over;
+    ctx.fillText(g, PAD_X - Math.round(it.tSize * 0.06), base);
+  }
+  if (it.style === 'bar'){
+    ctx.fillStyle = C.ink;
+    ctx.fillRect(PAD_X - 30, top + Math.round(it.tLh * 0.24), 3,
+                 it.lines.length * it.tLh - Math.round(it.tLh * 0.42));
+  }
+
+  ctx.fillStyle = C.ink;
+  ctx.font = `600 ${it.tSize}px ${L.font}`;
+  it.lines.forEach((ln, i) => {
+    const x = it.style === 'center' ? PAD_X + (maxW - ln.w) / 2 : PAD_X;
+    ctx.fillText(ln.toks.join(''), x, top + it.tLh * (i + 0.78));
+  });
+
+  const ry = top + it.lines.length * it.tLh + Math.round(L.size * 0.6);
+  if (it.style === 'rule'){
+    ctx.fillStyle = C.ink;
+    ctx.fillRect(PAD_X, ry, 56, 2);
+  } else if (it.style === 'center'){
+    const w = Math.round(maxW * 0.26);
+    ctx.fillStyle = C.hair;
+    ctx.fillRect(PAD_X + (maxW - w) / 2, ry, w, 1);
+  }
+}
+
 function render(){
   const L = layout();
-  const t = THEMES[state.theme];
   const total = L.pages.length;
   const out = [];
 
@@ -179,20 +226,22 @@ function render(){
     const ctx = cv.getContext('2d');
     ctx.textBaseline = 'alphabetic';
 
-    ctx.fillStyle = t.bg;
+    ctx.fillStyle = C.bg;
     ctx.fillRect(0, 0, W, H);
 
     for (const it of pg.items){
       if (it.kind === 'title'){
-        ctx.fillStyle = t.rule;
-        ctx.fillRect(PAD_X, it.y + 6, 68, 3);
-        ctx.fillStyle = t.ink;
-        ctx.font = `600 ${it.tSize}px ${L.font}`;
-        it.lines.forEach((ln, i) => {
-          ctx.fillText(ln.toks.join(''), PAD_X, it.y + 3 + 24 + it.tLh * (i + 0.78));
-        });
+        drawTitle(ctx, it, L);
+      } else if (it.kind === 'mark'){
+        ctx.save();
+        ctx.translate(W / 2, it.y);
+        ctx.rotate(Math.PI / 4);
+        ctx.fillStyle = C.hair;
+        const d = Math.round(L.size * 0.19);
+        ctx.fillRect(-d, -d, d * 2, d * 2);
+        ctx.restore();
       } else {
-        ctx.fillStyle = t.ink;
+        ctx.fillStyle = C.ink;
         ctx.font = `${L.size}px ${L.font}`;
         drawLine(ctx, it.line, PAD_X, it.y + L.lh * 0.76, W - PAD_X * 2);
       }
@@ -200,7 +249,7 @@ function render(){
 
     // 页脚
     ctx.font = `${L.fSize}px ${FONTS.hei}`;
-    ctx.fillStyle = t.sub;
+    ctx.fillStyle = C.sub;
     const fy = H - PAD_BOTTOM + L.fSize * 0.4;
     if (state.sign.trim()) ctx.fillText(state.sign.trim(), PAD_X, fy);
     if (total > 1){
@@ -275,14 +324,14 @@ function restore(){
   el.title.value = state.title;
   el.body.value = state.body;
   el.sign.value = state.sign;
-  for (const [id, key] of [['#font','font'],['#size','size'],['#theme','theme'],['#height','height'],['#indent','indent']]){
+  for (const [id, key] of [['#font','font'],['#size','size'],['#style','style'],['#height','height'],['#indent','indent']]){
     document.querySelectorAll(`${id} button`).forEach(b => {
       b.classList.toggle('on', String(state[key]) === b.dataset.v);
     });
   }
 }
 
-for (const [id, key, cast] of [['#font','font',String],['#size','size',String],['#theme','theme',String],
+for (const [id, key, cast] of [['#font','font',String],['#size','size',String],['#style','style',String],
                                ['#height','height',Number],['#indent','indent',Number]]){
   $(id).addEventListener('click', e => {
     const b = e.target.closest('button');
