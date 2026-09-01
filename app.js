@@ -24,7 +24,8 @@ const FONTS = {
 };
 
 // 白底。正文墨色偏暖，其余都是它的淡度
-const C = { bg:'#FFFFFF', ink:'#141310', sub:'#A29C93', hair:'#DAD5CC', rule:'#C7C1B7', faint:'#E4DED4' };
+const C = { bg:'#FFFFFF', ink:'#141310', sub:'#A29C93', hair:'#DAD5CC', rule:'#C7C1B7', faint:'#E4DED4',
+            red:'#C0402A' };
 
 // 不能出现在行首 / 行尾的标点
 const NO_HEAD = new Set('，。、；：？！）】》」』〉％,.;:?!)]}…—·”’');
@@ -32,7 +33,7 @@ const NO_TAIL = new Set('（【《「『〈([{“‘');
 
 const state = {
   title:'', body:'', sign:'',
-  font:'song', size:'m', style:'masthead', height:3200, indent:1,
+  font:'hei', size:'m', style:'redbar', height:4000, indent:1,
 };
 
 const $ = s => document.querySelector(s);
@@ -104,18 +105,11 @@ function metrics(){
 
   // 标题：每种版式的字号和行距各不一样
   m.tSize = st === 'oversize' ? Math.round(size * 2.15)
-          : st === 'band'     ? Math.round(size * 1.26)
           : st === 'vertical' ? Math.round(size * 1.34)
           : Math.round(size * 1.56);
   m.tLh   = st === 'oversize' ? Math.round(m.tSize * 1.32) : Math.round(m.tSize * 1.46);
-  m.track = Math.round(m.tSize * 0.2);        // 双线版的字距
   m.vStep = Math.round(m.tSize * 1.2);        // 竖题的字距
   return m;
-}
-
-// 一行字带字距时的实际宽度
-function trackedW(line, track){
-  return line.w + track * Math.max(0, line.toks.length - 1);
 }
 
 function buildBlocks(m){
@@ -131,11 +125,10 @@ function buildBlocks(m){
       measurer.font = `600 ${m.tSize}px ${m.font}`;
       const lines = wrap(title, m.maxW, 0);
       const above = m.st === 'masthead' ? (state.sign.trim() ? m.fSize + 22 : 4)
-                  : m.st === 'band' ? Math.round(m.size * 0.85) : 0;
-      const under = m.st === 'masthead' ? 0 : m.st === 'band' ? Math.round(m.size * 0.85) : 0;
+                  : m.st === 'redbar'  ? Math.round(m.size * 0.92) : 0;
       const below = m.st === 'oversize' ? Math.round(m.size * 1.85) : Math.round(m.size * 1.5);
-      blocks.push({ kind:'title', style:m.st, lines, above, under,
-                    h: above + lines.length * m.tLh + under + below });
+      blocks.push({ kind:'title', style:m.st, lines, above,
+                    h: above + lines.length * m.tLh + below });
     }
   }
 
@@ -205,14 +198,6 @@ function layout(){
   const markY = contentBottom(tail.items, m) + Math.round(m.size * 1.3);
   if (markY + Math.round(m.size * 0.6) + chrome <= H) tail.items.push({ kind:'mark', y:markY });
 
-  // 页高有富余时整体往下坐一点，比顶在上面好看
-  for (const pg of pages){
-    const room = H - chrome - contentBottom(pg.items, m);
-    if (room > 60){
-      const shift = Math.round(room * 0.3);
-      for (const it of pg.items) it.y += shift;
-    }
-  }
   return { pages, m };
 }
 
@@ -230,11 +215,6 @@ function drawLine(ctx, line, y, m){
   }
 }
 
-function drawTracked(ctx, line, cx, y, track){
-  let x = cx - trackedW(line, track) / 2;
-  for (const t of line.toks){ ctx.fillText(t, x, y); x += ctx.measureText(t).width + track; }
-}
-
 function drawTitle(ctx, it, m){
   const sign = state.sign.trim();
 
@@ -250,6 +230,10 @@ function drawTitle(ctx, it, m){
 
   const top = it.y + it.above;
 
+  if (it.style === 'redbar'){
+    ctx.fillStyle = C.red;
+    ctx.fillRect(PAD_X, it.y + 2, Math.round(m.size * 1.9), 4);
+  }
   if (it.style === 'masthead'){
     if (sign){
       ctx.fillStyle = C.sub;
@@ -260,24 +244,9 @@ function drawTitle(ctx, it, m){
     ctx.fillStyle = C.ink;
     ctx.fillRect(PAD_X, top - 2, m.maxW, 2);
   }
-  if (it.style === 'band'){
-    ctx.fillStyle = C.rule;
-    ctx.fillRect(PAD_X, it.y, m.maxW, 2);
-  }
-
   ctx.fillStyle = C.ink;
   ctx.font = `600 ${m.tSize}px ${m.font}`;
-  const cx = PAD_X + m.maxW / 2;
-  it.lines.forEach((ln, i) => {
-    const y = top + m.tLh * (i + 0.8);
-    if (it.style === 'band') drawTracked(ctx, ln, cx, y, m.track);
-    else ctx.fillText(ln.toks.join(''), PAD_X, y);
-  });
-
-  if (it.style === 'band'){
-    ctx.fillStyle = C.rule;
-    ctx.fillRect(PAD_X, top + it.lines.length * m.tLh + it.under - 2, m.maxW, 2);
-  }
+  it.lines.forEach((ln, i) => ctx.fillText(ln.toks.join(''), PAD_X, top + m.tLh * (i + 0.8)));
 }
 
 function render(){
@@ -354,12 +323,11 @@ function paint(canvases){
   const job = ++sizeJob;
   if (n) setTimeout(async () => {
     for (let i = 0; i < canvases.length; i++){
-      const blob = await new Promise(r => canvases[i].toBlob(r, 'image/png'));
+      const { blob, ext } = await encode(canvases[i]);
       if (job !== sizeJob) return;
       const tag = el.sheets.children[i]?.querySelector('.tag');
       if (!tag) return;
-      const kb = Math.round(blob.size / 1024);
-      tag.textContent = `${String(i + 1).padStart(2, '0')}   ${kb} KB`;
+      tag.textContent = `${String(i + 1).padStart(2, '0')}   ${Math.round(blob.size / 1024)} KB  ${ext.toUpperCase()}`;
       tag.classList.toggle('over', blob.size > SAFE_BYTES);
     }
   }, 420);
@@ -368,6 +336,20 @@ function paint(canvases){
 /* ── 存 ─────────────────────────────────────────────── */
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const toBlob = (cv, type, q) => new Promise(r => cv.toBlob(r, type, q));
+
+// 文字图 PNG 通常最省，但页面一长就会超过 500KB —— 超了微博会拿 70% 质量
+// 重压一遍，不如自己用高质量 JPG 压到线以下。
+async function encode(cv){
+  const png = await toBlob(cv, 'image/png');
+  if (png.size <= SAFE_BYTES) return { blob:png, ext:'png' };
+  for (const q of [0.94, 0.88, 0.8, 0.72]){
+    const jpg = await toBlob(cv, 'image/jpeg', q);
+    if (jpg.size <= SAFE_BYTES) return { blob:jpg, ext:'jpg' };
+  }
+  const jpg = await toBlob(cv, 'image/jpeg', 0.72);
+  return jpg.size < png.size ? { blob:jpg, ext:'jpg' } : { blob:png, ext:'png' };
+}
 
 async function download(){
   const canvases = render();
@@ -377,11 +359,11 @@ async function download(){
   el.save.textContent = '正在导出…';
 
   for (let i = 0; i < canvases.length; i++){
-    const blob = await new Promise(r => canvases[i].toBlob(r, 'image/png'));
+    const { blob, ext } = await encode(canvases[i]);
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = canvases.length > 1 ? `${base}-${String(i + 1).padStart(2, '0')}.png` : `${base}.png`;
+    a.download = canvases.length > 1 ? `${base}-${String(i + 1).padStart(2, '0')}.${ext}` : `${base}.${ext}`;
     a.click();
     URL.revokeObjectURL(url);
     await sleep(260);
@@ -404,13 +386,16 @@ function store(){
 
 function restore(){
   try { Object.assign(state, JSON.parse(localStorage.getItem('longpic') || '{}')); } catch {}
-  if (!(state.height >= MIN_H)) state.height = 3200;      // 早先存的页高太矮，会被微博压
-  if (!['masthead','band','oversize','vertical'].includes(state.style)) state.style = 'masthead';
   el.title.value = state.title;
   el.body.value  = state.body;
   el.sign.value  = state.sign;
-  for (const [id, key] of KEYS){
-    $(id)?.querySelectorAll('button').forEach(b => b.classList.toggle('on', String(state[key]) === b.dataset.v));
+  // 存过的选项可能已经不在了（比如早先那些会被微博压的页高），退回默认那颗
+  for (const [id, key, cast] of KEYS){
+    const btns = [...$(id).querySelectorAll('button')];
+    const fallback = btns.find(b => b.classList.contains('on')) || btns[0];
+    const hit = btns.find(b => b.dataset.v === String(state[key])) || fallback;
+    state[key] = cast(hit.dataset.v);
+    btns.forEach(b => b.classList.toggle('on', b === hit));
   }
 }
 
