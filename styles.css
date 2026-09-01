@@ -27,16 +27,14 @@ button,input,textarea{font:inherit;color:inherit}
   max-width:1260px;margin:0 auto;padding:56px 30px 22px;
   display:flex;align-items:flex-end;gap:18px;
 }
-.top::after{content:"";flex:1;height:1px;background:var(--hair);margin-bottom:9px}
-.brand{display:flex;align-items:flex-end;gap:13px}
-.brand .logo{width:19px;height:33px;color:var(--ink);display:block;margin-bottom:1px}
+.top::after{content:"";flex:1;height:1px;background:var(--hair);margin-bottom:10px}
+.brand{display:flex;align-items:flex-end;gap:14px}
+.brand .logo{width:9px;height:31px;color:var(--ink);display:block;margin-bottom:2px}
 .brand h1{
   margin:0;font-family:var(--serif);font-size:27px;font-weight:600;
   letter-spacing:.2em;line-height:1;
 }
-.tagline{
-  margin:0 0 3px;color:var(--ink-3);font-size:12.5px;letter-spacing:.06em;
-}
+
 
 /* ── 布局 ─────────────────────────── */
 .app{

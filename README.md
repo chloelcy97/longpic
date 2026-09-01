@@ -59,5 +59,23 @@ python3 -m http.server 5199
 
 ## 放到 GitHub Pages
 
-推上去，仓库 Settings → Pages → 选 main 分支根目录。仓库里的 `.nojekyll`
-是告诉 Pages 别拿 Jekyll 处理，原样发出去就好。
+1. 在 GitHub 上新建一个空仓库，名字叫 `longpic`，**不要**勾 README / .gitignore / license。
+2. 在这个文件夹里把远程地址接上，推上去：
+
+   ```bash
+   git remote add origin https://github.com/你的用户名/longpic.git
+   git push -u origin main
+   ```
+
+3. 仓库页面 → Settings → 左边 Pages → Source 选 **Deploy from a branch**，
+   分支选 `main`、目录选 `/ (root)`，Save。
+4. 等一两分钟，地址是 `https://你的用户名.github.io/longpic/`。
+
+以后改完东西：
+
+```bash
+git add -A && git commit -m "改了点什么" && git push
+```
+
+推完过一会儿网页自己就更新了。仓库里的 `.nojekyll` 是告诉 Pages 别拿 Jekyll
+处理，原样发出去就好。

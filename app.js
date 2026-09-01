@@ -12,9 +12,9 @@
 const W = 1080;                 // 出图宽度
 // 疏密：一整套留白，行距、段距、边距一起动
 const AIR = {
-  tight: { lh:1.72, para:0.55, padX:84,  padTop:120, padBottom:100 },
-  mid  : { lh:1.85, para:0.75, padX:96,  padTop:150, padBottom:126 },
-  loose: { lh:2.00, para:1.00, padX:110, padTop:186, padBottom:156 },
+  tight: { lh:1.72, para:0.55, padX:84,  padTop:92,  padBottom:96 },
+  mid  : { lh:1.85, para:0.75, padX:96,  padTop:112, padBottom:118 },
+  loose: { lh:2.00, para:1.00, padX:110, padTop:138, padBottom:146 },
 };
 const MIN_H = 2240;             // 宽高比 2.07，刚过微博那道线
 const SAFE_BYTES = 500 * 1024;  // 超过这个会被重新压
@@ -196,14 +196,7 @@ function layout(){
   const markY = contentBottom(tail.items, m) + Math.round(m.size * 1.3);
   if (markY + Math.round(m.size * 0.6) + chrome <= H) tail.items.push({ kind:'mark', y:markY });
 
-  // 页高有富余时给上面分一点，但封顶 —— 分多了标题就飘着了
-  for (const pg of pages){
-    const room = H - chrome - contentBottom(pg.items, m);
-    if (room > 80){
-      const shift = Math.min(Math.round(room * 0.3), Math.round(m.size * 2.4));
-      for (const it of pg.items) it.y += shift;
-    }
-  }
+  // 富余的留白一律留在下面。往下推过内容，标题上面就空出一片，很难看
   return { pages, m };
 }
 
@@ -411,13 +404,13 @@ el.sign .addEventListener('input', e => { state.sign  = e.target.value; schedule
 el.save .addEventListener('click', download);
 
 $('#demo').addEventListener('click', () => {
-  state.title = '夜航船';
+  state.title = '等一等';
   state.body = [
-    '船是傍晚开的。上船的人不多，各自占一张条凳，谁也不看谁。',
-    '同舱有个念过书的，一路都在说话。说到山川，说到典故，说到某年某月某地的一场大雪。听的人不作声，他便当作是佩服。',
-    '船行到半夜，江上起了雾。有人问，此地是何处。念过书的答不上来，只说，总归是往下走的。',
-    '天亮时靠了岸。众人各自散去，谁也没有再提夜里的事。',
-    '后来我常想起那一晚。人在船上，说什么都可以；一上岸，话就作数了。',
+    '入秋以后天亮得晚。六点半出门，路灯还亮着，巷口那家早点铺的蒸汽混在雾里，分不出哪是热气哪是雾。',
+    '卖豆浆的老太太认得我，不用开口就往袋子里装。有一回我说，今天想喝甜的。她愣了一下，说：「那要等一等。」',
+    '我以为是客气。站到第三分钟才想明白，甜豆浆得现兑，糖化得慢——她那句「等一等」，是真的要等。',
+    '锅盖掀开，白气一下子涌上来，把她整个人罩住。她在里面搅，搅得很慢，像是怕搅坏了什么。',
+    '一年里能被人这样等着的时候不多。所以那三分钟，我记了很久。',
   ].join('\n\n');
   el.title.value = state.title;
   el.body.value = state.body;
