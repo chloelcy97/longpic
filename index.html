@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F3F1EC">
+<meta name="description" content="把长文排成清晰的长图，自动分页，直接发微博。">
+<title>长图 · 长微博排版</title>
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+<header class="top">
+  <h1 class="wordmark">长图</h1>
+  <p class="tagline">把长文排成清晰的图，自动分页。</p>
+</header>
+
+<main class="app">
+
+  <!-- 左：写 -->
+  <section class="pane editor">
+    <label class="field">
+      <span class="label">标题</span>
+      <input id="title" type="text" placeholder="似此星辰非昨夜" spellcheck="false">
+    </label>
+
+    <label class="field grow">
+      <span class="label">正文</span>
+      <textarea id="body" placeholder="空一行分段。粘贴进来就行，剩下的交给排版。" spellcheck="false"></textarea>
+    </label>
+
+    <p class="meta"><span id="count">0 字</span><span class="dot"></span><span id="pages">0 张</span></p>
+
+    <div class="opts">
+      <div class="opt">
+        <span class="label">字体</span>
+        <div class="seg" id="font" role="group">
+          <button data-v="song" class="on">宋体</button>
+          <button data-v="hei">黑体</button>
+        </div>
+      </div>
+
+      <div class="opt">
+        <span class="label">字号</span>
+        <div class="seg" id="size" role="group">
+          <button data-v="s">小</button>
+          <button data-v="m" class="on">中</button>
+          <button data-v="l">大</button>
+        </div>
+      </div>
+
+      <div class="opt">
+        <span class="label">底色</span>
+        <div class="seg swatches" id="theme" role="group">
+          <button data-v="paper" class="on" title="纸白"><i style="--c:#FBFAF7"></i>纸白</button>
+          <button data-v="rice" title="米黄"><i style="--c:#F2EADB"></i>米黄</button>
+          <button data-v="night" title="夜色"><i style="--c:#16171C"></i>夜色</button>
+        </div>
+      </div>
+
+      <div class="opt">
+        <span class="label">每张长度</span>
+        <div class="seg" id="height" role="group">
+          <button data-v="1440" class="on">标准</button>
+          <button data-v="1800">长</button>
+        </div>
+      </div>
+
+      <div class="opt">
+        <span class="label">分段</span>
+        <div class="seg" id="indent" role="group">
+          <button data-v="1" class="on">首行缩进</button>
+          <button data-v="0">空行</button>
+        </div>
+      </div>
+
+      <label class="field">
+        <span class="label">落款<em>可留空</em></span>
+        <input id="sign" type="text" placeholder="@你的微博名" spellcheck="false">
+      </label>
+    </div>
+
+    <div class="acts">
+      <button id="save" class="btn primary">下载全部</button>
+      <button id="demo" class="btn ghost">示例</button>
+    </div>
+  </section>
+
+  <!-- 右：看 -->
+  <section class="pane preview">
+    <div id="sheets" class="sheets"></div>
+    <p class="hint" id="hint">写点什么，右边就有了。</p>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <p>发微博时记得选「原图」，不然会被再压一次。</p>
+</footer>
+
+<script src="./app.js"></script>
+</body>
+</html>
