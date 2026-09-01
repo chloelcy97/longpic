@@ -12,7 +12,7 @@
 剩下只有体积：单张超过 500KB 会被转成 70% 质量的 JPG。PNG 装不下的时候这里
 自己换成高质量 JPG 压到线以下，比交给微博压好。每张图上面标了 KB 和格式。
 
-在线用：<https://你的用户名.github.io/longpic/>
+在线用：<https://chloelcy97.github.io/longpic/>
 
 零构建。一个 html、一个 css、一个 js，打开就能跑。
 
@@ -59,17 +59,10 @@ python3 -m http.server 5199
 
 ## 放到 GitHub Pages
 
-1. 在 GitHub 上新建一个空仓库，名字叫 `longpic`，**不要**勾 README / .gitignore / license。
-2. 在这个文件夹里把远程地址接上，推上去：
-
-   ```bash
-   git remote add origin https://github.com/你的用户名/longpic.git
-   git push -u origin main
-   ```
-
-3. 仓库页面 → Settings → 左边 Pages → Source 选 **Deploy from a branch**，
-   分支选 `main`、目录选 `/ (root)`，Save。
-4. 等一两分钟，地址是 `https://你的用户名.github.io/longpic/`。
+仓库已经在 <https://github.com/chloelcy97/longpic>，走 SSH 推送。
+只剩一步：仓库页面 → Settings → 左边 Pages → Source 选 **Deploy from a branch**，
+分支选 `main`、目录选 `/ (root)`，Save。等一两分钟就能开
+<https://chloelcy97.github.io/longpic/> 。
 
 以后改完东西：
 
