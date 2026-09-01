@@ -111,11 +111,8 @@ function metrics(){
   m.footH = m.fSize + 40;
 
   // 标题：每种版式的字号和行距各不一样
-  m.tSize = st === 'oversize' ? Math.round(size * 2.15)
-          : st === 'vertical' ? Math.round(size * 1.34)
-          : Math.round(size * 1.56);
+  m.tSize = st === 'oversize' ? Math.round(size * 2.15) : Math.round(size * 1.56);
   m.tLh   = st === 'oversize' ? Math.round(m.tSize * 1.32) : Math.round(m.tSize * 1.46);
-  m.vStep = Math.round(m.tSize * 1.2);        // 竖题的字距
   return m;
 }
 
@@ -124,19 +121,13 @@ function buildBlocks(m){
   const title = state.title.trim();
 
   if (title){
-    if (m.st === 'vertical'){
-      const chars = [...title].filter(c => c.trim());
-      blocks.push({ kind:'title', style:m.st, chars,
-                    h: chars.length * m.vStep + Math.round(m.size * 1.5) });
-    } else {
-      measurer.font = `600 ${m.tSize}px ${m.font}`;
-      const lines = wrap(title, m.maxW, 0);
-      const above = m.st === 'masthead' ? (state.sign.trim() ? m.fSize + 22 : 4)
-                  : m.st === 'redbar'  ? Math.round(m.size * 0.92) : 0;
-      const below = m.st === 'oversize' ? Math.round(m.size * 1.85) : Math.round(m.size * 1.5);
-      blocks.push({ kind:'title', style:m.st, lines, above,
-                    h: above + lines.length * m.tLh + below });
-    }
+    measurer.font = `600 ${m.tSize}px ${m.font}`;
+    const lines = wrap(title, m.maxW, 0);
+    const above = m.st === 'masthead' ? (state.sign.trim() ? m.fSize + 22 : 4)
+                : m.st === 'redbar'  ? Math.round(m.size * 0.92) : 0;
+    const below = m.st === 'oversize' ? Math.round(m.size * 1.85) : Math.round(m.size * 1.5);
+    blocks.push({ kind:'title', style:m.st, lines, above,
+                  h: above + lines.length * m.tLh + below });
   }
 
   measurer.font = `${m.size}px ${m.font}`;
@@ -233,16 +224,6 @@ function drawLine(ctx, line, y, m){
 function drawTitle(ctx, it, m){
   const sign = state.sign.trim();
 
-  if (it.style === 'vertical'){
-    const cx = m.padX + m.maxW - Math.round(m.tSize * 0.5);
-    ctx.fillStyle = C.ink;
-    ctx.font = `600 ${m.tSize}px ${m.font}`;
-    ctx.textAlign = 'center';
-    it.chars.forEach((ch, i) => ctx.fillText(ch, cx, it.y + m.vStep * (i + 0.82)));
-    ctx.textAlign = 'left';
-    return;
-  }
-
   const top = it.y + it.above;
 
   if (it.style === 'redbar'){
@@ -323,7 +304,7 @@ function paint(canvases){
     box.className = 'sheet';
     const tag = document.createElement('span');
     tag.className = 'tag';
-    tag.textContent = String(i + 1).padStart(2, '0');
+    tag.innerHTML = `<b>${String(i + 1).padStart(2, '0')}</b><i></i>`;
     box.append(tag, cv);
     el.sheets.append(box);
   });
@@ -342,7 +323,7 @@ function paint(canvases){
       if (job !== sizeJob) return;
       const tag = el.sheets.children[i]?.querySelector('.tag');
       if (!tag) return;
-      tag.textContent = `${String(i + 1).padStart(2, '0')}   ${Math.round(blob.size / 1024)} KB  ${ext.toUpperCase()}`;
+      tag.querySelector('i').textContent = `${Math.round(blob.size / 1024)} KB · ${ext.toUpperCase()}`;
       tag.classList.toggle('over', blob.size > SAFE_BYTES);
     }
   }, 420);
