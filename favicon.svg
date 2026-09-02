@@ -1,7 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <rect width="64" height="64" rx="14" fill="#FBFAF7"/>
-  <g fill="none" stroke="#C0402A" stroke-width="5">
-    <path d="M28 16H16v32"/>
-    <path d="M36 16h12v32"/>
-  </g>
+  <text x="32" y="47" text-anchor="middle" font-size="44" font-weight="600"
+        font-family="Songti SC, Source Han Serif SC, serif" fill="#17150F">长</text>
 </svg>

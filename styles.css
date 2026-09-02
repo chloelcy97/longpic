@@ -26,12 +26,10 @@ button,input,textarea{font:inherit;color:inherit}
 .top{
   max-width:1240px;margin:0 auto;padding:58px 32px 0;
 }
-.brand{display:flex;align-items:center;gap:7px}
-.brand h1{
+.brand{
   margin:0;font-family:var(--serif);font-size:23px;font-weight:600;
-  letter-spacing:.26em;line-height:1;padding-left:.26em;
+  letter-spacing:.3em;line-height:1;padding-left:.3em;
 }
-.brand .q{width:11px;height:23px;display:block;color:var(--red);flex:none}
 
 /* ── 布局 ─────────────────────────── */
 .app{
@@ -48,8 +46,18 @@ button,input,textarea{font:inherit;color:inherit}
 }
 .card::-webkit-scrollbar{width:0}
 
-.block{padding:0 0 26px;margin-bottom:26px;border-bottom:1px solid var(--hair)}
-.block:last-child{padding-bottom:0;margin-bottom:0;border-bottom:0}
+/* 写 / 设置 两栏 */
+.tabs{display:flex;gap:24px;border-bottom:1px solid var(--hair);margin-bottom:26px}
+.tabs button{
+  border:0;background:none;cursor:pointer;padding:0 0 11px;
+  font-size:15px;letter-spacing:.14em;color:var(--mute);
+  border-bottom:1px solid transparent;margin-bottom:-1px;
+  transition:color .2s,border-color .2s;
+}
+.tabs button:hover{color:var(--ink-2)}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--ink)}
+
+.panel[hidden]{display:none}
 
 /* ── 表单 ─────────────────────────── */
 .field{display:block;margin-bottom:20px}
@@ -102,7 +110,8 @@ button,input,textarea{font:inherit;color:inherit}
 .seg button.on{color:var(--ink);border-bottom-color:var(--ink)}
 
 /* ── 按钮 ─────────────────────────── */
-.acts{display:flex;align-items:baseline;gap:22px;padding-top:2px}
+.acts{display:flex;align-items:baseline;gap:22px;
+  margin-top:26px;padding-top:24px;border-top:1px solid var(--hair)}
 .btn{border:0;background:none;cursor:pointer;padding:0;letter-spacing:.06em}
 .btn.primary{
   font-size:15.5px;color:var(--ink);border-bottom:1px solid var(--ink);
