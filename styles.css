@@ -26,10 +26,12 @@ button,input,textarea{font:inherit;color:inherit}
 .top{
   max-width:1240px;margin:0 auto;padding:58px 32px 0;
 }
-.brand{
+.brand{display:flex;align-items:center;gap:12px}
+.brand h1{
   margin:0;font-family:var(--serif);font-size:23px;font-weight:600;
-  letter-spacing:.3em;line-height:1;padding-left:.3em;
+  letter-spacing:.3em;line-height:1;
 }
+.brand .logo{width:9px;height:9px;flex:none;display:block}
 
 /* ── 布局 ─────────────────────────── */
 .app{
