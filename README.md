@@ -60,3 +60,6 @@ python3 -m http.server 5199
 
 GitHub Pages：Settings → Pages → Deploy from a branch → `main` / `(root)`。
 仓库内的 `.nojekyll` 使 Pages 跳过 Jekyll 处理。
+
+Pages 给静态资源的缓存是 10 分钟，改完样式或脚本后把 `index.html` 里
+`?v=` 的数字加一，回访的人才会立刻拿到新版。
